@@ -1,69 +1,81 @@
 import json
 
+from blinker import signal
+from core.parameters import c
+
+# from core.utils import example_fun() questo per importare una classe da un altro file
+
+
 class Signal_information(object):
-    def __init__(self):
-        pass
+    def __init__(self,signal_power,path): #constructor
+        self._signal_power = signal_power
+        self._latency = 0
+        self._noise_power = 0
+        self._path = path
 
     @property
-    def signal_power(self):
-        pass
+    def signal_power(self): #property
+        return self._signal_power
 
-    def update_signal_power(self):
-        pass
+    def update_signal_power(self,added_value):
+        self._signal_power = self.signal_power + added_value
 
     @property
     def noise_power(self):
-        pass
+        return self._noise_power
 
     @noise_power.setter
-    def noise_power(self):
-        pass
+    def noise_power(self,set_value):
+        self._noise_power = set_value
 
-    def update_noise_power(self):
-        pass
+    def update_noise_power(self, added_value):
+        self._noise_power += added_value
 
     @property
     def latency(self):
-        pass
+        return self._latency
 
     @latency.setter
-    def latency(self):
-        pass
+    def latency(self, set_value):
+        self._latency = set_value
 
-    def update_latency(self):
-        pass
+    def update_latency(self,added_value):
+        self._latency += added_value
 
     @property
     def path(self):
-        pass
+        return self._path
 
     @path.setter
-    def path(self):
-        pass
+    def path(self, set_value):
+        self._path = set_value
 
     def update_path(self):
-        pass
+        self._path = self._path[1:len(self._path)]
 
 
 class Node(object):
-    def __init__(self):
-        pass
+    def __init__(self,label,position, connected_nodes):
+        self._label = label
+        self._position = position
+        self._connected_nodes = connected_nodes
+        self._successive = {}
 
     @property
     def label(self):
-        pass
+        return self._label
 
     @property
     def position(self):
-        pass
+        return self._position
 
     @property
     def connected_nodes(self):
-        pass
+        return self._connected_nodes
 
     @property
     def successive(self):
-        pass
+        return self._successive
 
     @successive.setter
     def successive(self):
@@ -74,30 +86,32 @@ class Node(object):
 
 
 class Line(object):
-    def __init__(self):
-        pass
+    def __init__(self,label,lenght):
+        self._label = label
+        self._length = lenght
+        self._successive = {}
 
     @property
     def label(self):
-        pass
+        return self._label
 
     @property
     def length(self):
-        pass
+        return self._length
 
     @property
     def successive(self):
-        pass
+        return self._successive
 
     @successive.setter
-    def successive(self):
-        pass
+    def successive(self, set_value):
+        self._successive = set_value
 
     def latency_generation(self):
-        pass
+        return self._length/(2/3*c)
 
-    def noise_generation(self):
-        pass
+    def noise_generation(self, signal_power):
+        return signal_power * 1e-9 * self._length
 
     def propagate(self):
         pass
@@ -105,15 +119,16 @@ class Line(object):
 
 class Network(object):
     def __init__(self):
-        pass
+        self._nodes = {}
+        self._lines = {}
 
     @property
     def nodes(self):
-        pass
+        return self._nodes
 
     @property
     def lines(self):
-        pass
+        return self._lines
 
     def draw(self):
         pass
