@@ -1,6 +1,9 @@
 import json
-
+import matplotlib.pyplot as plt
+import numpy as np
 from blinker import signal
+from networkx.algorithms.bipartite.basic import color
+
 from core.parameters import c
 
 # from core.utils import example_fun() questo per importare una classe da un altro file
@@ -51,10 +54,11 @@ class Signal_information(object):
         self._path = set_value
 
     def update_path(self):
-        self._path = self._path[1:len(self._path)]
+        if len(self.path) < 0:
+            self._path = self._path[1:]
 
 
-class Node(object):
+class Node(object):     #defiito da un dizionario letto dal file json in Network
     def __init__(self,label,position, connected_nodes):
         self._label = label
         self._position = position
@@ -78,17 +82,20 @@ class Node(object):
         return self._successive
 
     @successive.setter
-    def successive(self):
-        pass
+    def successive(self,successive_dict):
+        self._successive = successive_dict
 
-    def propagate(self):
-        pass
+    def propagate(self,signal_information):
+
+        signal_information.update_path()
+        self.successive[signal_information.path[0]+signal_information.path[1]].propagate(signal_information)
+
 
 
 class Line(object):
-    def __init__(self,label,lenght):
+    def __init__(self,label,length):
         self._label = label
-        self._length = lenght
+        self._length = length
         self._successive = {}
 
     @property
@@ -113,14 +120,33 @@ class Line(object):
     def noise_generation(self, signal_power):
         return signal_power * 1e-9 * self._length
 
-    def propagate(self):
-        pass
+    def propagate(self,signal_information):
+        signal_information.update_latency(self.latency_generation())
+        signal_information.update_noise_power(self.noise_generation(signal_information.signal_power))
 
+        self.successive[signal_information.path[0]].propagate(signal_information)
+       
 
 class Network(object):
-    def __init__(self):
+    def __init__(self,file_in):
         self._nodes = {}
         self._lines = {}
+
+        with open( file_in ,'r') as file:
+            data = json.load(file)
+
+        for element in data:
+            self._nodes[element] = Node(label=element,position=data[element]["position"],connected_nodes=data[element]["connected_nodes"])
+
+        for element in self._nodes:
+            for connected_node in self._nodes[element].connected_nodes:
+                #distanza euclidea con numpy
+                print(self.nodes[connected_node].position[0])
+                punto_a = np.array(self.nodes[connected_node].position)
+                punto_b = np.array(self.nodes[element].position)
+                math_length = np.linalg.norm(punto_a - punto_b)
+                self._lines[element+connected_node] = Line(label=(element+connected_node),length=math_length)
+                self._lines[connected_node+element] = Line(label=(connected_node+element),length=math_length)
 
     @property
     def nodes(self):
@@ -131,19 +157,26 @@ class Network(object):
         return self._lines
 
     def draw(self):
-        pass
+        for element in self._nodes:
+            plt.scatter(self.nodes[element].position[0], self.nodes[element].position[1], color='blue')
+
+        return plt.show()
+
+
 
     # find_paths: given two node labels, returns all paths that connect the 2 nodes
     # as a list of node labels. Admissible path only if cross any node at most once
-    def find_paths(self, label1, label2):
+    def find_paths(self, label1, label2, path=None):
         pass
-
     # connect function set the successive attributes of all NEs as dicts
     # each node must have dict of lines and viceversa
     def connect(self):
-        pass
+       pass
 
     # propagate signal_information through path specified in it
     # and returns the modified spectral information
     def propagate(self, signal_information):
-        pass
+        start_node_label = signal_information.path[0]
+        if start_node_label in self._nodes:
+            self._nodes[start_node_label].propagate(signal_information)
+        return signal_information  # Segnale aggiornato dopo la propagazione
