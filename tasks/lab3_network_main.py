@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
-from core.elements import Node, Network, Signal_information
+from docutils.nodes import label
+from core.elements import Network, Signal_information, Node
 
 # Exercise Lab3: Network
 
@@ -12,18 +13,52 @@ ROOT = Path(__file__).parent.parent
 INPUT_FOLDER = ROOT / 'resources'
 file_input = INPUT_FOLDER / 'nodes.json'
 
+my_network = Network(file_input) #carica il file json in NETWORK
+my_network.connect() #Connette i nodi e le linee riempiendo i rispettivi dizionari "successive"
+Network.draw(my_network) #disegna la rete
 
-#connect nodes and lines in Network.
+#istanza delle informazioni che voglio mantenere
+latency = []
+total_noise = []
+SNR = []
+path_totali = []
 
-# Then propagate a Signal Information object of 1mW in the network and save the results in a dataframe.
-my_network = Network(file_input)
-Network.draw(my_network)
+#for annidato per trovare tutte le possibile coppie di nodi partenza/arrivo
+nodes_labels = list(my_network.nodes.keys())
+number_of_nodes = len(my_network.nodes)
+possible_couple = []
+for i in range(number_of_nodes):
+    for j in range(i+1,number_of_nodes):
+        possible_couple.append([nodes_labels[i],nodes_labels[j]])
+        possible_couple.append([nodes_labels[j], nodes_labels[i]])
 
-print(my_network.nodes)
-print(my_network.lines)
+#propagazione lungo la rete di tutti i possibili percorsi
+for couple in possible_couple:
+    paths = my_network.find_paths(couple[0], couple[1])
+    for path in paths:
+        # istnaza della potenza del segnale [W]
+        input_signal = Signal_information(signal_power=1, path=path)
+        my_network.propagate(input_signal)
+        #aggiornamento di tutte le info dopo la propagazione
+        SNR_int = 10*np.log10(input_signal.signal_power/input_signal.noise_power)
+        SNR.append(SNR_int)
+        total_noise.append(input_signal.noise_power)
+        latency.append(input_signal.latency)
+        path_totali.append(path)
 
+
+#Panda DataFrame con tutti i risultati
+df = pd.DataFrame({
+    'Path': path_totali,
+    'Latency': latency,
+    'Noise Power': total_noise,
+    'SNR': SNR
+})
+
+df.to_csv('Possible_paths_analysys.csv')
+print(df)
 # Convert this dataframe in a csv file called 'weighted_path' and finally plot the network.
-# Follow all the instructions in README.md file
+
 
 
 
