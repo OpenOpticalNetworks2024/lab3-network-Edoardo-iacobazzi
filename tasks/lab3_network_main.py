@@ -55,9 +55,8 @@ df = pd.DataFrame({
     'SNR': SNR
 })
 
-df.to_csv('Possible_paths_analysys.csv')
+df.to_csv('Possible_paths_analysys.csv') #csv file del panada dataframe
 print(df)
-# Convert this dataframe in a csv file called 'weighted_path' and finally plot the network.
 
 
 
